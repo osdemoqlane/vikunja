@@ -2,6 +2,20 @@
 
 Vikunja: self-hosted to-do app. Go API in `pkg/`, Vue 3 + TypeScript frontend in `frontend/` (pnpm). `veans/` is a separate Go module with its own `AGENTS.md`.
 
+## Critical scenarios
+
+Two accounts are available: one admin and one regular user. Several scenarios are permission boundaries and need both.
+
+P0, must always work:
+1. Register, log in, log out
+2. Create a project, create a task in it, mark it done
+3. Due date and reminder on a task, confirm it appears in Upcoming
+4. Kanban: move a task between buckets, confirm the done bucket marks it done
+5. Share a project with the second user at read-only, confirm that user cannot edit
+6. Create a label, filter by it, save the filter and reopen it
+
+P1: subtasks and related tasks; assigning a task to the second user; attachments and comments; public link share and what it exposes; API token creation and use.
+
 ## Commands
 
 Go tasks run through `mage` (`mage -l`). Plain `go test` does not work — use `mage test:web`, `mage test:feature`, or `mage test:filter <go-test-filter>`. Save test output to a file (`2>&1 | tee /tmp/out.log`) and read the file; never re-run a test just to grep it differently.
