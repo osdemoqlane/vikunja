@@ -4,7 +4,7 @@ Vikunja: self-hosted to-do app. Go API in `pkg/`, Vue 3 + TypeScript frontend in
 
 ## Critical scenarios
 
-Two accounts are available: one admin and one regular user. Several scenarios are permission boundaries and need both.
+Two regular accounts are available: a project owner (`qa-owner`) and a second user (`qa-member`). Neither is an instance admin; that needs a license. Several scenarios are permission boundaries and need both.
 
 P0, must always work:
 1. Register, log in, log out

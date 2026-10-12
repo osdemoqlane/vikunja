@@ -1,0 +1,68 @@
+# Testing-only stack for Qlane pull-request sandboxes. It builds the pull
+# request's code from the shipped Dockerfile; nothing here changes what ships.
+#
+# The final image is FROM scratch (no shell, no wget), so every command below
+# runs the vikunja binary directly in exec form.
+services:
+  vikunja:
+    image: vikunja-pr:test # exists in no registry: a pull can never pass for a build
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Shallow clones make `git describe` unreliable; a constant keeps the build cache.
+        RELEASE_VERSION: qlane-test
+    ports:
+      - "3456:3456"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # The frontend calls the API at this address, and with CORS on (the
+      # default) Vikunja refuses to start without it.
+      VIKUNJA_SERVICE_PUBLICURL: ${QLANE_SANDBOX_PUBLIC_URL:-http://localhost:3456}
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_HOST: db
+      VIKUNJA_DATABASE_USER: vikunja
+      VIKUNJA_DATABASE_PASSWORD: vikunja
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      # The image runs as uid 1000; /tmp is the only directory it can write to.
+      VIKUNJA_FILES_BASEPATH: /tmp/files
+    # Each step runs the full init, migrations included, so the schema and both
+    # test accounts exist before the server starts. Steps run in their own
+    # container without the service's volumes, which is why the database is
+    # Postgres rather than SQLite. The command is passed to the image's
+    # ENTRYPOINT (the vikunja binary).
+    pre_start:
+      - command:
+          - user
+          - create
+          - --username=qa-owner
+          - --email=qa-owner@example.com
+          - --password=${QA_OWNER_PASSWORD:?set QA_OWNER_PASSWORD on the environment}
+      - command:
+          - user
+          - create
+          - --username=qa-member
+          - --email=qa-member@example.com
+          - --password=${QA_MEMBER_PASSWORD:?set QA_MEMBER_PASSWORD on the environment}
+    healthcheck:
+      test: ["CMD", "/app/vikunja/vikunja", "healthcheck"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      # Throwaway credentials for an ephemeral sandbox.
+      POSTGRES_USER: vikunja
+      POSTGRES_PASSWORD: vikunja
+      POSTGRES_DB: vikunja
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vikunja -d vikunja"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
