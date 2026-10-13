@@ -6,6 +6,10 @@ Vikunja: self-hosted to-do app. Go API in `pkg/`, Vue 3 + TypeScript frontend in
 
 Two regular accounts are available: a project owner (`qa-owner`) and a second user (`qa-member`). Neither is an instance admin; that needs a license. Several scenarios are permission boundaries and need both.
 
+The test stack seeds a project, "Shared read-only with QA member", owned by `qa-owner`, shared read-only with `qa-member`, with two tasks. Scenario 5's member side needs only `qa-member`: the project and its tasks are readable, but adding or editing a task is refused. That refusal is the expected result, not a bug. Do not rename, delete or re-share this project, or add, edit or delete its tasks as the owner: other testers run at the same time and rely on it.
+
+Not in the test stack: the mailer is off, so password reset and any flow that ends in an email cannot be completed there.
+
 P0, must always work:
 1. Register, log in, log out
 2. Create a project, create a task in it, mark it done
