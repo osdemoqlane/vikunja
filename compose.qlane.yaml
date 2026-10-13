@@ -54,6 +54,23 @@ services:
       retries: 20
       start_period: 60s
 
+  # Once Vikunja is healthy, seeds a project qa-owner has shared read-only with
+  # qa-member, so the member's side of a read-only share can be checked by one
+  # tester. Runs once and exits, with a non-zero code on any error.
+  seed-shared-project:
+    image: node:24.18.1-bookworm-slim
+    depends_on:
+      vikunja:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      VIKUNJA_URL: http://vikunja:3456
+      QA_OWNER_PASSWORD: ${QA_OWNER_PASSWORD:?set QA_OWNER_PASSWORD on the environment}
+      QA_MEMBER_PASSWORD: ${QA_MEMBER_PASSWORD:?set QA_MEMBER_PASSWORD on the environment}
+    volumes:
+      - ./qlane/seed-shared-project.mjs:/seed-shared-project.mjs:ro
+    command: ["node", "/seed-shared-project.mjs"]
+
   db:
     image: postgres:17-alpine
     environment:
